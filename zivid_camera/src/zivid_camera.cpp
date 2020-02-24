@@ -62,6 +62,8 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp_lifecycle:
                              "from scratch.");
   }
 
+  image_transport_node_ = rclcpp::Node::make_shared("image_transport_node");
+  parameter_server_node_ = rclcpp::Node::make_shared("zivid_parameter_server");
 
   this->declare_parameter<std::string>("zivid.camera.serial_number", serial_number_);
   this->declare_parameter<int>("zivid.camera.num_capture_frames", num_capture_frames_);
@@ -73,8 +75,6 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
 {
 
-  image_transport_node_ = rclcpp::Node::make_shared("image_transport_node");
-  parameter_server_node_ = rclcpp::Node::make_shared("zivid_parameter_server");
 
   serial_number_ = this->get_parameter("zivid.camera.serial_number").as_string();
   num_capture_frames_ = this->get_parameter("zivid.camera.num_capture_frames").as_int();
