@@ -26,7 +26,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-find_package(Zivid 1.8.0 COMPONENTS Core REQUIRED)
+find_package(Zivid 2.0.0 COMPONENTS Core REQUIRED)
 message(STATUS "Found Zivid version ${Zivid_VERSION}")
 
 find_package(OpenMP REQUIRED)

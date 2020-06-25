@@ -50,7 +50,7 @@ sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Head
                                                        const Zivid::PointCloud& point_cloud);
 
 sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Header& header,
-                                                       const Zivid::Image<Zivid::RGBA8>& image);
+                                                       const Zivid::Image<Zivid::ColorRGBA>& image);
 
 sensor_msgs::msg::Image::ConstSharedPtr makeDepthImage(const std_msgs::msg::Header& header,
                                                        const Zivid::PointCloud& point_cloud);
