@@ -215,12 +215,11 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
 
   capture_2d_service_ = create_service<zivid_interfaces::srv::Capture2D>(
       "capture_2d", std::bind(&ZividCamera::capture2DServiceHandler, this, _1, _2, _3));
-  //
-  //  capture_assistant_suggest_settings_service_ =
-  //  create_service<zivid_interfaces::srv::CaptureAssistantSuggestSettings>(
-  //      "capture_assistant/suggest_settings",
-  //      std::bind(&ZividCamera::captureAssistantSuggestSettingsServiceHandler, this, _1, _2, _3));
-  //
+
+  capture_assistant_suggest_settings_service_ = create_service<zivid_interfaces::srv::CaptureAssistantSuggestSettings>(
+      "capture_assistant/suggest_settings",
+      std::bind(&ZividCamera::captureAssistantSuggestSettingsServiceHandler, this, _1, _2, _3));
+
   color_image_publisher_ = image_transport::create_camera_publisher(image_transport_node_.get(), "color/"
                                                                                                  "image_color");
   //  depth_image_publisher_ = image_transport::create_camera_publisher(image_transport_node_.get(), "depth/image_raw");
@@ -359,21 +358,44 @@ void ZividCamera::capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t
   color_image_publisher_.publish(zivid_conversions::makeColorImage(header, image), camera_info);
 }
 
-// void ZividCamera::captureAssistantSuggestSettingsServiceHandler(
-//    const std::shared_ptr<rmw_request_id_t> request_header,
-//    const std::shared_ptr<zivid_interfaces::srv::CaptureAssistantSuggestSettings::Request> request,
-//    std::shared_ptr<zivid_interfaces::srv::CaptureAssistantSuggestSettings::Response> response)
-//{
-//  (void)request_header;
-//
-//  if (!enabled_)
-//  {
-//    RCLCPP_WARN(this->get_logger(), "Trying to call the 'capture_assistant/suggest_settings' service, but the service
-//    "
-//                                    "is not activated");
-//    return;
-//  }
-//}
+void ZividCamera::captureAssistantSuggestSettingsServiceHandler(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<zivid_interfaces::srv::CaptureAssistantSuggestSettings::Request> request,
+    std::shared_ptr<zivid_interfaces::srv::CaptureAssistantSuggestSettings::Response> response)
+{
+  (void)request_header;
+
+  if (!enabled_)
+  {
+    RCLCPP_WARN(this->get_logger(), "Trying to call the 'capture_assistant/suggest_settings' service, but the service "
+                                    "is not activated");
+    return;
+  }
+
+  const auto max_capture_time =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(request->max_capture_time.sec)) +
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(request->max_capture_time.nanosec));
+
+  const auto ambient_light_frequency = [&request]() {
+    switch (request->ambient_light_frequency)
+    {
+      case zivid_interfaces::srv::CaptureAssistantSuggestSettings::Request::AMBIENT_LIGHT_FREQUENCY_NONE:
+        return Zivid::CaptureAssistant::SuggestSettingsParameters::AmbientLightFrequency::none;
+      case zivid_interfaces::srv::CaptureAssistantSuggestSettings::Request::AMBIENT_LIGHT_FREQUENCY_50HZ:
+        return Zivid::CaptureAssistant::SuggestSettingsParameters::AmbientLightFrequency::hz50;
+      case zivid_interfaces::srv::CaptureAssistantSuggestSettings::Request::AMBIENT_LIGHT_FREQUENCY_60HZ:
+        return Zivid::CaptureAssistant::SuggestSettingsParameters::AmbientLightFrequency::hz60;
+    }
+    throw std::runtime_error("Unhandled AMBIENT_LIGHT_FREQUENCY value: " +
+                             std::to_string(request->ambient_light_frequency));
+  }();
+
+  const auto suggestSettingsParameters = Zivid::CaptureAssistant::SuggestSettingsParameters{
+    ambient_light_frequency, Zivid::CaptureAssistant::SuggestSettingsParameters::MaxCaptureTime{ max_capture_time }
+  };
+
+  settings_ = Zivid::CaptureAssistant::suggestSettings(camera_, suggestSettingsParameters);
+}
 
 template <rclcpp::ParameterType ParameterType, typename ZividSettingsType, typename ZividSettingsOrAcquisition>
 rcl_interfaces::msg::SetParametersResult ZividCamera::setParameter(const rclcpp::Parameter& parameter,
