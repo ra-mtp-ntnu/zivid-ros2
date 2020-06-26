@@ -7,13 +7,13 @@
 #include <sstream>
 #include <regex>
 
-#include <zivid_camera/zivid_camera.h>
-
 #include <Zivid/Firmware.h>
-#include <Zivid/Frame2D.h>
 #include <Zivid/Settings2D.h>
 #include <Zivid/Version.h>
 #include <Zivid/CaptureAssistant.h>
+#include <Zivid/Experimental/Calibration.h>
+
+#include <zivid_camera/zivid_camera.h>
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -199,6 +199,8 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
                                               acquisition.patterns().sine().bidirectional().value());
   }
 
+  settings2d_ = Zivid::Settings2D{ settings2d_path_ };
+
   on_set_parameters_callback_handler_ =
       parameter_server_node_->add_on_set_parameters_callback(std::bind(&ZividCamera::parameterEventHandler, this, _1));
 
@@ -211,16 +213,16 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
   capture_service_ = create_service<zivid_interfaces::srv::Capture>(
       "capture", std::bind(&ZividCamera::captureServiceHandler, this, _1, _2, _3));
 
-  //  capture_2d_service_ = create_service<zivid_interfaces::srv::Capture2D>(
-  //      "capture_2d", std::bind(&ZividCamera::capture2DServiceHandler, this, _1, _2, _3));
+  capture_2d_service_ = create_service<zivid_interfaces::srv::Capture2D>(
+      "capture_2d", std::bind(&ZividCamera::capture2DServiceHandler, this, _1, _2, _3));
   //
   //  capture_assistant_suggest_settings_service_ =
   //  create_service<zivid_interfaces::srv::CaptureAssistantSuggestSettings>(
   //      "capture_assistant/suggest_settings",
   //      std::bind(&ZividCamera::captureAssistantSuggestSettingsServiceHandler, this, _1, _2, _3));
   //
-  //  color_image_publisher_ = image_transport::create_camera_publisher(image_transport_node_.get(), "color/"
-  //                                                                                                 "image_color");
+  color_image_publisher_ = image_transport::create_camera_publisher(image_transport_node_.get(), "color/"
+                                                                                                 "image_color");
   //  depth_image_publisher_ = image_transport::create_camera_publisher(image_transport_node_.get(), "depth/image_raw");
   auto qos = rclcpp::SystemDefaultsQoS();
   points_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points", qos);
@@ -335,29 +337,28 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
   publishFrame(camera_.capture(settings_));
 }
 
-// void ZividCamera::capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
-//                                          const std::shared_ptr<zivid_interfaces::srv::Capture2D::Request> request,
-//                                          std::shared_ptr<zivid_interfaces::srv::Capture2D::Response> response)
-//{
-//  (void)request_header;
-//
-//  if (!enabled_)
-//  {
-//    RCLCPP_WARN(this->get_logger(), "Trying to call the 'capture_2d' service, but the service is not "
-//                                    "activated");
-//    return;
-//  }
-//  std::lock_guard<std::mutex> parameter_lock_guard{ parameter_mutex_ };
-//
-//  Zivid::Settings2D settings2D;
-//  auto frame2D = camera_.capture2D(settings2D);
-//  const auto header = makeHeader();
-//  auto image = frame2D.image<Zivid::RGBA8>();
-//  const auto camera_info =
-//      zivid_conversions::makeCameraInfo(header, image.width(), image.height(), camera_.intrinsics());
-//  color_image_publisher_.publish(zivid_conversions::makeColorImage(header, image), camera_info);
-//}
-//
+void ZividCamera::capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
+                                          const std::shared_ptr<zivid_interfaces::srv::Capture2D::Request> request,
+                                          std::shared_ptr<zivid_interfaces::srv::Capture2D::Response> response)
+{
+  (void)request_header;
+
+  if (!enabled_)
+  {
+    RCLCPP_WARN(this->get_logger(), "Trying to call the 'capture_2d' service, but the service is not "
+                                    "activated");
+    return;
+  }
+
+  std::lock_guard<std::mutex> parameter_lock_guard{ parameter_mutex_ };
+  auto frame = camera_.capture(settings2d_);
+  const auto header = makeHeader();
+  auto image = frame.imageRGBA();
+  const auto camera_info = zivid_conversions::makeCameraInfo(header, image.width(), image.height(),
+                                                             Zivid::Experimental::Calibration::intrinsics(camera_));
+  color_image_publisher_.publish(zivid_conversions::makeColorImage(header, image), camera_info);
+}
+
 // void ZividCamera::captureAssistantSuggestSettingsServiceHandler(
 //    const std::shared_ptr<rmw_request_id_t> request_header,
 //    const std::shared_ptr<zivid_interfaces::srv::CaptureAssistantSuggestSettings::Request> request,

@@ -68,18 +68,18 @@ sensor_msgs::msg::PointCloud2::UniquePtr makePointCloud2(const std_msgs::msg::He
 //  return msg;
 //}
 //
-// sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Header& header,
-//                                                       const Zivid::Image<Zivid::ColorRGBA>& image)
-//{
-//  auto msg = std::make_shared<sensor_msgs::msg::Image>();
-//  fillCommonMsgFields(*msg, header, image.width(), image.height());
-//  msg->encoding = sensor_msgs::image_encodings::RGBA8;
-//  constexpr uint32_t bytes_per_pixel = 4U;
-//  msg->step = static_cast<uint32_t>(bytes_per_pixel * image.width());
-//  const auto uint8_data_ptr = reinterpret_cast<const uint8_t*>(image.dataPtr());
-//  msg->data = std::vector<uint8_t>(uint8_data_ptr, uint8_data_ptr + image.size() * sizeof(Zivid::ColorRGBA));
-//  return msg;
-//}
+ sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Header& header,
+                                                       const Zivid::Image<Zivid::ColorRGBA>& image)
+{
+  auto msg = std::make_shared<sensor_msgs::msg::Image>();
+  fillCommonMsgFields(*msg, header, image.width(), image.height());
+  msg->encoding = sensor_msgs::image_encodings::RGBA8;
+  constexpr uint32_t bytes_per_pixel = 4U;
+  msg->step = static_cast<uint32_t>(bytes_per_pixel * image.width());
+  const auto uint8_data_ptr = reinterpret_cast<const uint8_t*>(image.data());
+  msg->data = std::vector<uint8_t>(uint8_data_ptr, uint8_data_ptr + image.size() * sizeof(Zivid::ColorRGBA));
+  return msg;
+}
 //
 // sensor_msgs::msg::Image::ConstSharedPtr makeDepthImage(const std_msgs::msg::Header& header,
 //                                                       const Zivid::PointCloud& point_cloud)
@@ -100,52 +100,52 @@ sensor_msgs::msg::PointCloud2::UniquePtr makePointCloud2(const std_msgs::msg::He
 //  return msg;
 //}
 //
-// sensor_msgs::msg::CameraInfo::ConstSharedPtr makeCameraInfo(const std_msgs::msg::Header& header, std::size_t width,
-//                                                            std::size_t height,
-//                                                            const Zivid::CameraIntrinsics& intrinsics)
-//{
-//  auto msg = std::make_shared<sensor_msgs::msg::CameraInfo>();
-//  msg->header = header;
-//  msg->width = static_cast<uint32_t>(width);
-//  msg->height = static_cast<uint32_t>(height);
-//  msg->distortion_model = sensor_msgs::distortion_models::PLUMB_BOB;
-//
-//  // k1, k2, t1, t2, k3
-//  const auto distortion = intrinsics.distortion();
-//  msg->d.resize(5);
-//  msg->d[0] = distortion.k1().value();
-//  msg->d[1] = distortion.k2().value();
-//  msg->d[2] = distortion.p1().value();
-//  msg->d[3] = distortion.p2().value();
-//  msg->d[4] = distortion.k3().value();
-//
-//  // Intrinsic camera matrix for the raw (distorted) images.
-//  //     [fx  0 cx]
-//  // K = [ 0 fy cy]
-//  //     [ 0  0  1]
-//  const auto camera_matrix = intrinsics.cameraMatrix();
-//  msg->k[0] = camera_matrix.fx().value();
-//  msg->k[2] = camera_matrix.cx().value();
-//  msg->k[4] = camera_matrix.fy().value();
-//  msg->k[5] = camera_matrix.cy().value();
-//  msg->k[8] = 1;
-//
-//  // R (identity)
-//  msg->r[0] = 1;
-//  msg->r[4] = 1;
-//  msg->r[8] = 1;
-//
-//  // Projection/camera matrix
-//  //     [fx'  0  cx' Tx]
-//  // P = [ 0  fy' cy' Ty]
-//  //     [ 0   0   1   0]
-//  msg->p[0] = camera_matrix.fx().value();
-//  msg->p[2] = camera_matrix.cx().value();
-//  msg->p[5] = camera_matrix.fy().value();
-//  msg->p[6] = camera_matrix.cy().value();
-//  msg->p[10] = 1;
-//
-//  return msg;
-//}
+ sensor_msgs::msg::CameraInfo::ConstSharedPtr makeCameraInfo(const std_msgs::msg::Header& header, std::size_t width,
+                                                            std::size_t height,
+                                                            const Zivid::CameraIntrinsics& intrinsics)
+{
+  auto msg = std::make_shared<sensor_msgs::msg::CameraInfo>();
+  msg->header = header;
+  msg->width = static_cast<uint32_t>(width);
+  msg->height = static_cast<uint32_t>(height);
+  msg->distortion_model = sensor_msgs::distortion_models::PLUMB_BOB;
+
+  // k1, k2, t1, t2, k3
+  const auto distortion = intrinsics.distortion();
+  msg->d.resize(5);
+  msg->d[0] = distortion.k1().value();
+  msg->d[1] = distortion.k2().value();
+  msg->d[2] = distortion.p1().value();
+  msg->d[3] = distortion.p2().value();
+  msg->d[4] = distortion.k3().value();
+
+  // Intrinsic camera matrix for the raw (distorted) images.
+  //     [fx  0 cx]
+  // K = [ 0 fy cy]
+  //     [ 0  0  1]
+  const auto camera_matrix = intrinsics.cameraMatrix();
+  msg->k[0] = camera_matrix.fx().value();
+  msg->k[2] = camera_matrix.cx().value();
+  msg->k[4] = camera_matrix.fy().value();
+  msg->k[5] = camera_matrix.cy().value();
+  msg->k[8] = 1;
+
+  // R (identity)
+  msg->r[0] = 1;
+  msg->r[4] = 1;
+  msg->r[8] = 1;
+
+  // Projection/camera matrix
+  //     [fx'  0  cx' Tx]
+  // P = [ 0  fy' cy' Ty]
+  //     [ 0   0   1   0]
+  msg->p[0] = camera_matrix.fx().value();
+  msg->p[2] = camera_matrix.cx().value();
+  msg->p[5] = camera_matrix.fy().value();
+  msg->p[6] = camera_matrix.cy().value();
+  msg->p[10] = 1;
+
+  return msg;
+}
 
 }  // namespace zivid_conversions
