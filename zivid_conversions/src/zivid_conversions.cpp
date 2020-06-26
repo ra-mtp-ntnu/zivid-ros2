@@ -47,27 +47,6 @@ sensor_msgs::msg::PointCloud2::UniquePtr makePointCloud2(const std_msgs::msg::He
   return msg;
 }
 
-// sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Header& header,
-//                                                       const Zivid::PointCloud& point_cloud)
-//{
-//  auto msg = std::make_shared<sensor_msgs::msg::Image>();
-//  fillCommonMsgFields(*msg, header, point_cloud.width(), point_cloud.height());
-//  msg->encoding = sensor_msgs::image_encodings::RGB8;
-//  constexpr uint32_t bytes_per_pixel = 3U;
-//  msg->step = static_cast<uint32_t>(bytes_per_pixel * point_cloud.width());
-//  msg->data.resize(msg->step * msg->height);
-//
-//#pragma omp parallel for
-//  for (std::size_t i = 0; i < point_cloud.size(); i++)
-//  {
-//    const auto point = point_cloud(i);
-//    msg->data[3 * i] = point.red();
-//    msg->data[3 * i + 1] = point.green();
-//    msg->data[3 * i + 2] = point.blue();
-//  }
-//  return msg;
-//}
-//
  sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Header& header,
                                                        const Zivid::Image<Zivid::ColorRGBA>& image)
 {
