@@ -62,7 +62,7 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp_lifecycle:
   }
 
   image_transport_node_ = rclcpp::Node::make_shared("image_transport_node");
-  parameter_server_node_ = rclcpp::Node::make_shared("zivid_parameter_server");
+  parameter_server_node_ = rclcpp::Node::make_shared("zivid_parameter_server", rclcpp::NodeOptions().allow_undeclared_parameters(true));
 
   this->declare_parameter<std::string>("zivid.camera.serial_number", serial_number_);
   this->declare_parameter<std::string>("zivid.camera.settings_path", settings_path_);
@@ -374,7 +374,8 @@ void ZividCamera::captureAssistantSuggestSettingsServiceHandler(
 
   const auto max_capture_time =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(request->max_capture_time.sec)) +
-      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(request->max_capture_time.nanosec));
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::nanoseconds(request->max_capture_time.nanosec));
 
   const auto ambient_light_frequency = [&request]() {
     switch (request->ambient_light_frequency)
@@ -395,6 +396,74 @@ void ZividCamera::captureAssistantSuggestSettingsServiceHandler(
   };
 
   settings_ = Zivid::CaptureAssistant::suggestSettings(camera_, suggestSettingsParameters);
+
+  std::string settings_parameter_prefix{ "zivid.camera.settings" };
+  parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix + ".processing.color.balance.blue",
+                                                          settings_.processing().color().balance().blue().value()));
+  parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix + ".processing.color.balance.green",
+                                                          settings_.processing().color().balance().red().value()));
+  parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix + ".processing.color.balance.red",
+                                                          settings_.processing().color().balance().red().value()));
+  parameter_server_node_->set_parameter(rclcpp::Parameter(
+      settings_parameter_prefix + ".processing.filters.experimental.contrast_distortion.correction.enabled",
+      settings_.processing().filters().experimental().contrastDistortion().correction().isEnabled().value()));
+  parameter_server_node_->set_parameter(rclcpp::Parameter(
+      settings_parameter_prefix + ".processing.filters.experimental.contrast_distortion.correction.strength",
+      settings_.processing().filters().experimental().contrastDistortion().correction().strength().value()));
+  parameter_server_node_->set_parameter(rclcpp::Parameter(
+      settings_parameter_prefix + ".processing.filters.experimental.contrast_distortion.removal.enabled",
+      settings_.processing().filters().experimental().contrastDistortion().removal().isEnabled().value()));
+  parameter_server_node_->set_parameter(rclcpp::Parameter(
+      settings_parameter_prefix + ".processing.filters.experimental.contrast_distortion.removal.threshold",
+      settings_.processing().filters().experimental().contrastDistortion().removal().threshold().value()));
+
+  parameter_server_node_->set_parameter(
+      rclcpp::Parameter(settings_parameter_prefix + ".processing.filters.noise.removal.enabled",
+                        settings_.processing().filters().noise().removal().isEnabled().value()));
+  parameter_server_node_->set_parameter(
+      rclcpp::Parameter(settings_parameter_prefix + ".processing.filters.noise.removal.threshold",
+                        settings_.processing().filters().noise().removal().threshold().value()));
+
+  parameter_server_node_->set_parameter(
+      rclcpp::Parameter(settings_parameter_prefix + ".processing.filters.outlier.removal.enabled",
+                        settings_.processing().filters().outlier().removal().isEnabled().value()));
+  parameter_server_node_->set_parameter(
+      rclcpp::Parameter(settings_parameter_prefix + ".processing.filters.outlier.removal.threshold",
+                        settings_.processing().filters().outlier().removal().threshold().value()));
+
+  parameter_server_node_->set_parameter(
+      rclcpp::Parameter(settings_parameter_prefix + ".processing.filters.reflection.removal."
+                                                    "enabled",
+                        settings_.processing().filters().reflection().removal().isEnabled().value()));
+
+  parameter_server_node_->set_parameter(
+      rclcpp::Parameter(settings_parameter_prefix + ".processing.filters.smoothing.gaussian."
+                                                    "enabled",
+                        settings_.processing().filters().smoothing().gaussian().isEnabled().value()));
+  parameter_server_node_->set_parameter(
+      rclcpp::Parameter(settings_parameter_prefix + ".processing.filters.smoothing.gaussian.sigma",
+                        settings_.processing().filters().smoothing().gaussian().sigma().value()));
+
+  const auto acquisitions = settings_.acquisitions();
+  for (size_t i = 0; i < acquisitions.size(); ++i)
+  {
+    const auto acquisition = acquisitions[i];
+    parameter_server_node_->set_parameter(
+        rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) + ".aperture",
+                          acquisition.aperture().value()));
+    parameter_server_node_->set_parameter(
+        rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) + ".brightness",
+                          acquisition.brightness().value()));
+    parameter_server_node_->set_parameter(rclcpp::Parameter(
+        settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) + ".exposure_time",
+        static_cast<int>(acquisition.exposureTime().value().count())));
+    parameter_server_node_->set_parameter(
+        rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) + ".gain",
+                          acquisition.gain().value()));
+    parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" +
+                                                                std::to_string(i) + ".patterns.sine.bidirectional",
+                                                            acquisition.patterns().sine().bidirectional().value()));
+  }
 }
 
 template <rclcpp::ParameterType ParameterType, typename ZividSettingsType, typename ZividSettingsOrAcquisition>
