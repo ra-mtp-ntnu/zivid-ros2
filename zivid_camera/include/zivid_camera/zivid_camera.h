@@ -126,23 +126,26 @@ private:
   rclcpp::Node::SharedPtr parameter_server_node_;
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handler_;
   rcl_interfaces::msg::SetParametersResult parameterEventHandler(std::vector<rclcpp::Parameter> parameters);
-  template <rclcpp::ParameterType ParameterType, typename ZividSettingsType>
+
+  template <rclcpp::ParameterType ParameterType, typename ZividSettingsType, typename ZividSettingsOrAcquisition>
   rcl_interfaces::msg::SetParametersResult setParameter(const rclcpp::Parameter& parameter,
-                                                        std::vector<Zivid::Settings>& settings);
-  template <rclcpp::ParameterType ParameterType, typename ZividSettingsType>
-  rcl_interfaces::msg::SetParametersResult setParameter(const rclcpp::Parameter& parameter, Zivid::Settings& settings);
+                                                        std::vector<ZividSettingsOrAcquisition>& settings);
+
+  template <rclcpp::ParameterType ParameterType, typename ZividSettingsType, typename ZividSettingsOrAcquisition>
+  rcl_interfaces::msg::SetParametersResult setParameter(const rclcpp::Parameter& parameter, ZividSettingsOrAcquisition& settings);
   std::mutex parameter_mutex_;
 
   Zivid::Application zivid_;
   Zivid::Camera camera_;
-  Zivid::Settings base_settings_;
-  std::vector<Zivid::Settings> hdr_settings_;
 
-  std::string serial_number_{ "" };
-  int num_capture_frames_{ 3 };
+  Zivid::Settings settings_;
+  Zivid::Settings2D settings2d_;
+
+  std::string serial_number_;
   bool file_camera_mode_{ false };
   std::string frame_id_{ "zivid_optical_frame" };
-
+  std::string settings_path_;
+  std::string settings2d_path_;
   bool enabled_{ false };
 };
 
