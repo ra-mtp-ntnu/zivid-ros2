@@ -1,0 +1,5 @@
+zivid_camera:
+  ros__parameters:
+    zivid:
+      camera:
+        frame_id: "zivid_camera_frame2"
