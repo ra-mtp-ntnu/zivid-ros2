@@ -2,7 +2,8 @@ zivid_camera:
   ros__parameters:
     zivid:
       camera:
-        serial_number: "1011706010015"
-        frame_id: "zivid_camera_frame2"
-        settings_path: "/home/lars/zivid_ros2_ws/src/zivid-ros/zivid_camera/config/zivid_camera_settings.yml"
-        settings2d_path: "/home/lars/zivid_ros2_ws/src/zivid-ros/zivid_camera/config/zivid_camera_settings2d.yml"
+        # serial_number: "1011706010015"
+        frame_id: "zivid_camera_frame"
+        settings_path: "C:/zivid_ros2_ws/src/zivid-ros/zivid_camera/config/zivid_camera_settings.yml"
+        settings2d_path: "C:/zivid_ros2_ws/src/zivid-ros/zivid_camera/config/zivid_camera_settings2d.yml"
+        file_camera_path: "C:/Users/tingelst/Downloads/ZividSampleData/FileCameraZividOne.zfc"
