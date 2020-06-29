@@ -20,7 +20,7 @@
 #include <sensor_msgs/distortion_models.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 
-#include <image_transport/image_transport.h>
+// #include <image_transport/image_transport.h>
 
 #include <zivid_interfaces/srv/camera_info_model_name.hpp>
 #include <zivid_interfaces/srv/camera_info_serial_number.hpp>
@@ -53,6 +53,7 @@ struct ZividCameraOptions
   rclcpp::QoS qos_profile = rclcpp::SystemDefaultsQoS();
 };
 
+ZIVID_CAMERA_PUBLIC
 class ZividCamera : public rclcpp_lifecycle::LifecycleNode
 {
 public:
@@ -75,10 +76,10 @@ public:
     return parameter_server_node_;
   }
 
-  const rclcpp::Node::SharedPtr get_image_transport_node()
-  {
-    return image_transport_node_;
-  }
+  // const rclcpp::Node::SharedPtr get_image_transport_node()
+  // {
+  //   return image_transport_node_;
+  // }
 
 private:
   void publishFrame(Zivid::Frame&& frame);
@@ -119,9 +120,9 @@ private:
       std::shared_ptr<zivid_interfaces::srv::CaptureAssistantSuggestSettings::Response> response);
 
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_publisher_;
-  image_transport::CameraPublisher color_image_publisher_;
-  image_transport::CameraPublisher depth_image_publisher_;
-  rclcpp::Node::SharedPtr image_transport_node_;
+  // image_transport::CameraPublisher color_image_publisher_;
+  // image_transport::CameraPublisher depth_image_publisher_;
+  // rclcpp::Node::SharedPtr image_transport_node_;
 
   rclcpp::Node::SharedPtr parameter_server_node_;
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handler_;

@@ -27,7 +27,7 @@ sensor_msgs::msg::PointCloud2::UniquePtr makePointCloud2(const std_msgs::msg::He
                                    reinterpret_cast<const uint8_t*>(data + point_cloud.size()));
 
 #pragma omp parallel for default(none) shared(point_cloud, msg)
-  for (std::size_t i = 0; i < point_cloud.size(); i++)
+  for (int i = 0; i < point_cloud.size(); i++)
   {
     uint8_t* point_ptr = &(msg->data[i * sizeof(Zivid::PointXYZColorRGBA)]);
     float* x_ptr = reinterpret_cast<float*>(&(point_ptr[0]));

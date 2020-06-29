@@ -61,7 +61,7 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp_lifecycle:
                              "project from scratch.");
   }
 
-  image_transport_node_ = rclcpp::Node::make_shared("image_transport_node");
+  // image_transport_node_ = rclcpp::Node::make_shared("image_transport_node");
   parameter_server_node_ = rclcpp::Node::make_shared("zivid_parameter_server", rclcpp::NodeOptions().allow_undeclared_parameters(true));
 
   this->declare_parameter<std::string>("zivid.camera.serial_number", serial_number_);
@@ -220,8 +220,8 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
       "capture_assistant/suggest_settings",
       std::bind(&ZividCamera::captureAssistantSuggestSettingsServiceHandler, this, _1, _2, _3));
 
-  color_image_publisher_ = image_transport::create_camera_publisher(image_transport_node_.get(), "color/"
-                                                                                                 "image_color");
+  // color_image_publisher_ = image_transport::create_camera_publisher(image_transport_node_.get(), "color/"
+                                                                                                 //"image_color");
   //  depth_image_publisher_ = image_transport::create_camera_publisher(image_transport_node_.get(), "depth/image_raw");
   auto qos = rclcpp::SystemDefaultsQoS();
   points_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points", qos);
@@ -265,7 +265,7 @@ ZividCamera::on_deactivate(const rclcpp_lifecycle::State& state)
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 ZividCamera::on_cleanup(const rclcpp_lifecycle::State& state)
 {
-  image_transport_node_.reset();
+  // image_transport_node_.reset();
   parameter_server_node_.reset();
 
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -355,7 +355,7 @@ void ZividCamera::capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t
   auto image = frame.imageRGBA();
   const auto camera_info = zivid_conversions::makeCameraInfo(header, image.width(), image.height(),
                                                              Zivid::Experimental::Calibration::intrinsics(camera_));
-  color_image_publisher_.publish(zivid_conversions::makeColorImage(header, image), camera_info);
+  // color_image_publisher_.publish(zivid_conversions::makeColorImage(header, image), camera_info);
 }
 
 void ZividCamera::captureAssistantSuggestSettingsServiceHandler(

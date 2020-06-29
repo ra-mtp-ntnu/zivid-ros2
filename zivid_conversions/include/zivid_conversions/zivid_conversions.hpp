@@ -18,6 +18,7 @@
 
 namespace zivid_conversions
 {
+
 inline sensor_msgs::msg::PointField createPointField(std::string name, uint32_t offset, uint8_t datatype,
                                                      uint32_t count)
 {
@@ -43,18 +44,23 @@ inline void fillCommonMsgFields(T& msg, const std_msgs::msg::Header& header, std
   msg.is_bigendian = big_endian();
 }
 
+ZIVID_CONVERSIONS_PUBLIC
 sensor_msgs::msg::PointCloud2::UniquePtr makePointCloud2(const std_msgs::msg::Header& header,
                                                          const Zivid::PointCloud& point_cloud);
 
+ZIVID_CONVERSIONS_PUBLIC
 sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Header& header,
                                                        const Zivid::PointCloud& point_cloud);
 
+ZIVID_CONVERSIONS_PUBLIC
 sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Header& header,
                                                        const Zivid::Image<Zivid::ColorRGBA>& image);
 
+ZIVID_CONVERSIONS_PUBLIC
 sensor_msgs::msg::Image::ConstSharedPtr makeDepthImage(const std_msgs::msg::Header& header,
                                                        const Zivid::PointCloud& point_cloud);
 
+ZIVID_CONVERSIONS_PUBLIC
 sensor_msgs::msg::CameraInfo::ConstSharedPtr makeCameraInfo(const std_msgs::msg::Header& header, std::size_t width,
                                                             std::size_t height,
                                                             const Zivid::CameraIntrinsics& intrinsics);
