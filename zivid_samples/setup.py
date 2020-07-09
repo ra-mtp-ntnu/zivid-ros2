@@ -1,4 +1,7 @@
+import os
+from glob import glob
 from setuptools import setup
+
 
 package_name = 'zivid_samples'
 
@@ -10,6 +13,10 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, "launch"), glob('launch/*.launch.py')),
+        # Same with the RViz configuration file.
+        (os.path.join('share', package_name, "config"), glob('config/*')),
+        # And the ply files.
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,6 +27,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'capture_request = zivid_samples.capture_request:main',
             'sample_capture = zivid_samples.sample_capture:main',
             'sample_capture_2 = zivid_samples.sample_capture_2:main',
             'sample_capture_3 = zivid_samples.sample_capture_3:main'
