@@ -64,11 +64,11 @@ rclcpp_components_register_node(zivid_camera_library
                                 EXECUTABLE
                                 "zivid_camera")
 
-add_executable(manual_composition src/manual_composition.cpp)
-turn_on_compiler_warnings_if_enabled(manual_composition)
-target_include_directories(manual_composition PRIVATE include)
-target_link_libraries(manual_composition zivid_camera_library Zivid::Core)
-ament_target_dependencies(manual_composition
+add_executable(zivid_camera_node src/zivid_camera_node.cpp)
+turn_on_compiler_warnings_if_enabled(zivid_camera_node)
+target_include_directories(zivid_camera_node PRIVATE include)
+target_link_libraries(zivid_camera_node zivid_camera_library Zivid::Core)
+ament_target_dependencies(zivid_camera_node
                           rclcpp_lifecycle
                           std_msgs
                           sensor_msgs
@@ -87,7 +87,7 @@ install(TARGETS zivid_camera_library
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib)
 
-install(TARGETS manual_composition DESTINATION lib/${PROJECT_NAME})
+install(TARGETS zivid_camera_node DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/ DESTINATION include)
 
