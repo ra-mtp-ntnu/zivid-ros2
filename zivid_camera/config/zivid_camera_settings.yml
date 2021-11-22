@@ -1,67 +1,56 @@
 __version__:
   serializer: 1
-  data: 4
+  data: 8
 Settings:
   Acquisitions:
     - Acquisition:
-        Aperture: 4.80645685
-        Brightness: 1
-        ExposureTime: 8333
-        Gain: 1.09804174710977
-        Patterns:
-          Sine:
-            Bidirectional: no
+        Aperture: 2.20241559856522
+        Brightness: 1.8
+        ExposureTime: 1677
+        Gain: 1.07480485047226
     - Acquisition:
-        Aperture: 3.28882924
-        Brightness: 1
-        ExposureTime: 8333
-        Gain: 1.82168709619691
-        Patterns:
-          Sine:
-            Bidirectional: no
+        Aperture: 7.32788514929765
+        Brightness: 1.76704945160877
+        ExposureTime: 1677
+        Gain: 1
     - Acquisition:
-        Aperture: 2.44367983
-        Brightness: 1
-        ExposureTime: 8333
-        Gain: 3.3073735098601
-        Patterns:
-          Sine:
-            Bidirectional: no
-    - Acquisition:
-        Aperture: 2.61632139
-        Brightness: 0.999999999999999
-        ExposureTime: 24999
-        Gain: 4.23762147263063
-        Patterns:
-          Sine:
-            Bidirectional: no
+        Aperture: 2
+        Brightness: 1.79999999999998
+        ExposureTime: 11739
+        Gain: 1.78350591181766
+  Experimental:
+    Engine: phase
   Processing:
     Color:
       Balance:
         Blue: 1
         Green: 1
         Red: 1
+      Experimental:
+        ToneMapping:
+          Enabled: always
+      Gamma: 1
     Filters:
       Experimental:
         ContrastDistortion:
           Correction:
-            Enabled: no
-            Strength: 0.4
+            Enabled: yes
+            Strength: 0.3
           Removal:
             Enabled: no
-            Threshold: 0.5
+            Threshold: 0.2
       Noise:
         Removal:
           Enabled: yes
-          Threshold: 7
+          Threshold: 5
       Outlier:
         Removal:
           Enabled: yes
-          Threshold: 5
+          Threshold: 10
       Reflection:
         Removal:
           Enabled: yes
       Smoothing:
         Gaussian:
           Enabled: yes
-          Sigma: 1.5
+          Sigma: 1
