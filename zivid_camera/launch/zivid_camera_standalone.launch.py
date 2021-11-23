@@ -29,6 +29,7 @@ def generate_launch_description():
             {"settings2d_path": settings2d_path},
             {"file_camera_path": ""},
             {"update_firmware_automatically": False},
+            {"use_latched_publisher_for_points_xyz": True},
         ],
     )
 

@@ -62,8 +62,11 @@ public:
 
 private:
   void publishFrame(Zivid::Frame&& frame);
+  bool shouldPublishPointsXYZ() const;
 
   std_msgs::msg::Header makeHeader();
+  void publishPointCloudXYZ(const std_msgs::msg::Header& header, const Zivid::PointCloud& point_cloud);
+  void publishPointCloudXYZRGBA(const std_msgs::msg::Header& header, const Zivid::PointCloud& point_cloud);
 
   CameraStatus camera_status_;
 
@@ -103,9 +106,12 @@ private:
       std::shared_ptr<zivid_interfaces::srv::LoadSettings2DFromFile::Response> response);
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_xyz_publisher_;
   image_transport::CameraPublisher color_image_publisher_;
   image_transport::CameraPublisher depth_image_publisher_;
   image_transport::CameraPublisher snr_image_publisher_;
+
+  bool use_latched_publisher_for_points_xyz_{ false };
 
   Zivid::Application zivid_;
   Zivid::Camera camera_;

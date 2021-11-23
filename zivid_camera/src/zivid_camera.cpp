@@ -7,6 +7,8 @@
 #include <sstream>
 #include <regex>
 
+#include <sensor_msgs/msg/point_cloud2.hpp>
+
 #include <Zivid/Firmware.h>
 #include <Zivid/Settings2D.h>
 #include <Zivid/Version.h>
@@ -14,6 +16,7 @@
 #include <Zivid/Experimental/Calibration.h>
 
 #include <zivid_camera/zivid_camera.hpp>
+#include <zivid_conversions/zivid_conversions.hpp>
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -66,6 +69,7 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("ziv
   this->declare_parameter<std::string>("settings2d_path", settings2d_path_);
   this->declare_parameter<std::string>("frame_id", frame_id_);
   this->declare_parameter<std::string>("file_camera_path", "");
+  this->declare_parameter<bool>("use_latched_publisher_for_points_xyz", use_latched_publisher_for_points_xyz_);
 
   bool update_firmware_automatically = true;
   this->declare_parameter<bool>("update_firmware_automatically", update_firmware_automatically);
@@ -74,6 +78,8 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("ziv
   frame_id_ = this->get_parameter("frame_id").as_string();
   settings_path_ = this->get_parameter("settings_path").as_string();
   settings2d_path_ = this->get_parameter("settings2d_path").as_string();
+
+  use_latched_publisher_for_points_xyz_ = this->get_parameter("use_latched_publisher_for_points_xyz").as_bool();
 
   std::string file_camera_path = this->get_parameter("file_camera_path").as_string();
   file_camera_mode_ = !file_camera_path.empty();
@@ -168,6 +174,13 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("ziv
   auto qos = rclcpp::SystemDefaultsQoS();
   points_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points", qos);
 
+  auto points_xyz_publisher_qos = rclcpp::SystemDefaultsQoS();
+  if (use_latched_publisher_for_points_xyz_)
+  {
+    points_xyz_publisher_qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
+  }
+  points_xyz_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points/xyz", points_xyz_publisher_qos);
+
   RCLCPP_INFO_STREAM(this->get_logger(), camera_);
   if (!file_camera_mode_)
   {
@@ -193,9 +206,49 @@ std_msgs::msg::Header ZividCamera::makeHeader()
 
 void ZividCamera::publishFrame(Zivid::Frame&& frame)
 {
-  const auto header = makeHeader();
-  const auto point_cloud = frame.pointCloud();
-  points_publisher_->publish(std::move(zivid_conversions::makePointCloud2(header, point_cloud)));
+  const bool publish_points_xyz = shouldPublishPointsXYZ();
+
+  if (publish_points_xyz)
+  {
+    const auto header = makeHeader();
+    auto point_cloud = frame.pointCloud();
+
+    // Transform point cloud from millimeters (Zivid SDK) to meter (ROS).
+    const float scale = 0.001f;
+    const auto transformationMatrix = Zivid::Matrix4x4{ scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, 1 };
+    point_cloud.transform(transformationMatrix);
+
+    if (publish_points_xyz)
+    {
+      publishPointCloudXYZ(header, point_cloud);
+    }
+  }
+}
+
+bool ZividCamera::shouldPublishPointsXYZ() const
+{
+  return points_xyz_publisher_->get_subscription_count() > 0 || use_latched_publisher_for_points_xyz_;
+}
+
+void ZividCamera::publishPointCloudXYZ(const std_msgs::msg::Header& header, const Zivid::PointCloud& point_cloud)
+{
+  // We are using the Zivid::XYZW type here for compatibility with the pcl::PointXYZ type, which contains an
+  // padding float for performance reasons. We could use the "pcl_conversion" utility functions to construct
+  // the PointCloud2 message. However, those are observed to add significant overhead due to extra unnecssary
+  // copies of the data.
+  using ZividDataType = Zivid::PointXYZW;
+  auto msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
+  zivid_conversions::fillCommonMsgFields(*msg, header, point_cloud.width(), point_cloud.height());
+  msg->fields.reserve(3);
+  msg->fields.push_back(zivid_conversions::createPointField("x", 0, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(zivid_conversions::createPointField("y", 4, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(zivid_conversions::createPointField("z", 8, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->is_dense = false;
+  msg->point_step = sizeof(ZividDataType);
+  msg->row_step = msg->point_step * msg->width;
+  msg->data.resize(msg->row_step * msg->height);
+  point_cloud.copyData<ZividDataType>(reinterpret_cast<ZividDataType*>(msg->data.data()));
+  points_xyz_publisher_->publish(std::move(msg));
 }
 
 void ZividCamera::cameraInfoModelNameServiceHandler(
