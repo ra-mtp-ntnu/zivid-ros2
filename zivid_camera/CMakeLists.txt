@@ -22,8 +22,8 @@ function(turn_on_compiler_warnings_if_enabled TARGET)
 endfunction()
 
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 #find_package(image_transport REQUIRED)
@@ -51,7 +51,6 @@ target_compile_definitions(zivid_camera_library PRIVATE
                            "ZIVID_CAMERA_BUILDING_DLL")
 target_link_libraries(zivid_camera_library Zivid::Core)
 ament_target_dependencies(zivid_camera_library
-                          rclcpp_lifecycle
                           rclcpp_components
                           std_msgs
                           sensor_msgs
@@ -64,12 +63,12 @@ rclcpp_components_register_node(zivid_camera_library
                                 EXECUTABLE
                                 "zivid_camera")
 
-add_executable(zivid_camera_node src/zivid_camera_node.cpp)
-turn_on_compiler_warnings_if_enabled(zivid_camera_node)
-target_include_directories(zivid_camera_node PRIVATE include)
-target_link_libraries(zivid_camera_node zivid_camera_library Zivid::Core)
-ament_target_dependencies(zivid_camera_node
-                          rclcpp_lifecycle
+add_executable(zivid_camera_standalone src/zivid_camera_standalone.cpp)
+turn_on_compiler_warnings_if_enabled(zivid_camera_standalone)
+target_include_directories(zivid_camera_standalone PRIVATE include)
+target_link_libraries(zivid_camera_standalone zivid_camera_library Zivid::Core)
+ament_target_dependencies(zivid_camera_standalone
+                          rclcpp_components
                           std_msgs
                           sensor_msgs
                           #image_transport
@@ -87,10 +86,10 @@ install(TARGETS zivid_camera_library
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib)
 
-install(TARGETS zivid_camera_node DESTINATION lib/${PROJECT_NAME})
+install(TARGETS zivid_camera_standalone DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/ DESTINATION include)
 
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 
 ament_package()

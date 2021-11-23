@@ -61,18 +61,18 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("ziv
                              "project from scratch.");
   }
 
-  this->declare_parameter<std::string>("zivid.camera.serial_number", serial_number_);
-  this->declare_parameter<std::string>("zivid.camera.settings_path", settings_path_);
-  this->declare_parameter<std::string>("zivid.camera.settings2d_path", settings2d_path_);
-  this->declare_parameter<std::string>("zivid.camera.frame_id", frame_id_);
-  this->declare_parameter<std::string>("zivid.camera.file_camera_path", "");
+  this->declare_parameter<std::string>("serial_number", serial_number_);
+  this->declare_parameter<std::string>("settings_path", settings_path_);
+  this->declare_parameter<std::string>("settings2d_path", settings2d_path_);
+  this->declare_parameter<std::string>("frame_id", frame_id_);
+  this->declare_parameter<std::string>("file_camera_path", "");
 
-  serial_number_ = this->get_parameter("zivid.camera.serial_number").as_string();
-  frame_id_ = this->get_parameter("zivid.camera.frame_id").as_string();
-  settings_path_ = this->get_parameter("zivid.camera.settings_path").as_string();
-  settings2d_path_ = this->get_parameter("zivid.camera.settings2d_path").as_string();
+  serial_number_ = this->get_parameter("serial_number").as_string();
+  frame_id_ = this->get_parameter("frame_id").as_string();
+  settings_path_ = this->get_parameter("settings_path").as_string();
+  settings2d_path_ = this->get_parameter("settings2d_path").as_string();
 
-  std::string file_camera_path = this->get_parameter("zivid.camera.file_camera_path").as_string();
+  std::string file_camera_path = this->get_parameter("file_camera_path").as_string();
   file_camera_mode_ = !file_camera_path.empty();
 
   if (file_camera_mode_)
