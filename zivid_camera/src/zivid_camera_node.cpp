@@ -16,7 +16,7 @@ int main(int argc, char * argv[])
   rclcpp::NodeOptions options;
 
   auto zivid_camera = std::make_shared<zivid_camera::ZividCamera>(options);
-  exec.add_node(zivid_camera->get_node_base_interface());
+  exec.add_node(zivid_camera);
   // exec.add_node(zivid_camera->get_parameter_server_node());
   //exec.add_node(zivid_camera->get_image_transport_node());
 

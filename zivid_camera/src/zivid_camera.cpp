@@ -48,7 +48,7 @@ static bool startsWith(const std::string& str, const std::string& prefix)
 
 namespace zivid_camera
 {
-ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp_lifecycle::LifecycleNode("zivid_camera", options)
+ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("zivid_camera", options)
 {
   setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 
@@ -61,19 +61,12 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp_lifecycle:
                              "project from scratch.");
   }
 
-  // image_transport_node_ = rclcpp::Node::make_shared("image_transport_node");
-  // parameter_server_node_ = rclcpp::Node::make_shared("zivid_parameter_server", rclcpp::NodeOptions().allow_undeclared_parameters(true));
-
   this->declare_parameter<std::string>("zivid.camera.serial_number", serial_number_);
   this->declare_parameter<std::string>("zivid.camera.settings_path", settings_path_);
   this->declare_parameter<std::string>("zivid.camera.settings2d_path", settings2d_path_);
   this->declare_parameter<std::string>("zivid.camera.frame_id", frame_id_);
   this->declare_parameter<std::string>("zivid.camera.file_camera_path", "");
-}
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
-{
   serial_number_ = this->get_parameter("zivid.camera.serial_number").as_string();
   frame_id_ = this->get_parameter("zivid.camera.frame_id").as_string();
   settings_path_ = this->get_parameter("zivid.camera.settings_path").as_string();
@@ -158,12 +151,15 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
 
   // parameter_server_node_->declare_parameter(settings_parameter_prefix + ".processing.filters.noise.removal.enabled",
   //                                           settings_.processing().filters().noise().removal().isEnabled().value());
-  // parameter_server_node_->declare_parameter(settings_parameter_prefix + ".processing.filters.noise.removal.threshold",
+  // parameter_server_node_->declare_parameter(settings_parameter_prefix +
+  // ".processing.filters.noise.removal.threshold",
   //                                           settings_.processing().filters().noise().removal().threshold().value());
 
-  // parameter_server_node_->declare_parameter(settings_parameter_prefix + ".processing.filters.outlier.removal.enabled",
+  // parameter_server_node_->declare_parameter(settings_parameter_prefix +
+  // ".processing.filters.outlier.removal.enabled",
   //                                           settings_.processing().filters().outlier().removal().isEnabled().value());
-  // parameter_server_node_->declare_parameter(settings_parameter_prefix + ".processing.filters.outlier.removal.threshold",
+  // parameter_server_node_->declare_parameter(settings_parameter_prefix +
+  // ".processing.filters.outlier.removal.threshold",
   //                                           settings_.processing().filters().outlier().removal().threshold().value());
 
   // parameter_server_node_->declare_parameter(
@@ -175,7 +171,8 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
   //     settings_parameter_prefix + ".processing.filters.smoothing.gaussian."
   //                                 "enabled",
   //     settings_.processing().filters().smoothing().gaussian().isEnabled().value());
-  // parameter_server_node_->declare_parameter(settings_parameter_prefix + ".processing.filters.smoothing.gaussian.sigma",
+  // parameter_server_node_->declare_parameter(settings_parameter_prefix +
+  // ".processing.filters.smoothing.gaussian.sigma",
   //                                           settings_.processing().filters().smoothing().gaussian().sigma().value());
 
   // const auto acquisitions = settings_.acquisitions();
@@ -194,15 +191,16 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
   //   parameter_server_node_->declare_parameter(settings_parameter_prefix + ".acquisitions.acquisition_" +
   //                                                 std::to_string(i) + ".gain",
   //                                             acquisition.gain().value());
-    // parameter_server_node_->declare_parameter(settings_parameter_prefix + ".acquisitions.acquisition_" +
-    //                                               std::to_string(i) + ".patterns.sine.bidirectional",
-    //                                           acquisition.patterns().sine().bidirectional().value());
+  // parameter_server_node_->declare_parameter(settings_parameter_prefix + ".acquisitions.acquisition_" +
+  //                                               std::to_string(i) + ".patterns.sine.bidirectional",
+  //                                           acquisition.patterns().sine().bidirectional().value());
   // }
 
   settings2d_ = Zivid::Settings2D{ settings2d_path_ };
 
   // on_set_parameters_callback_handler_ =
-  //     parameter_server_node_->add_on_set_parameters_callback(std::bind(&ZividCamera::parameterEventHandler, this, _1));
+  //     parameter_server_node_->add_on_set_parameters_callback(std::bind(&ZividCamera::parameterEventHandler, this,
+  //     _1));
 
   // camera_info_serial_number_service_ = this->create_service<zivid_interfaces::srv::CameraInfoSerialNumber>(
   //     "camera_info/serial_number", std::bind(&ZividCamera::cameraInfoSerialNumberServiceHandler, this, _1, _2, _3));
@@ -216,7 +214,8 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
   // capture_2d_service_ = create_service<zivid_interfaces::srv::Capture2D>(
   //     "capture_2d", std::bind(&ZividCamera::capture2DServiceHandler, this, _1, _2, _3));
 
-  // capture_assistant_suggest_settings_service_ = create_service<zivid_interfaces::srv::CaptureAssistantSuggestSettings>(
+  // capture_assistant_suggest_settings_service_ =
+  // create_service<zivid_interfaces::srv::CaptureAssistantSuggestSettings>(
   //     "capture_assistant/suggest_settings",
   //     std::bind(&ZividCamera::captureAssistantSuggestSettingsServiceHandler, this, _1, _2, _3));
 
@@ -226,12 +225,6 @@ ZividCamera::on_configure(const rclcpp_lifecycle::State& state)
   auto qos = rclcpp::SystemDefaultsQoS();
   points_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points", qos);
 
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-}
-
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-ZividCamera::on_activate(const rclcpp_lifecycle::State& state)
-{
   RCLCPP_INFO_STREAM(this->get_logger(), camera_);
   if (!file_camera_mode_)
   {
@@ -240,12 +233,11 @@ ZividCamera::on_activate(const rclcpp_lifecycle::State& state)
   }
   RCLCPP_INFO_STREAM(this->get_logger(), "Connected to camera '" << camera_.info().serialNumber() << "'");
 
-  points_publisher_->on_activate();
   enabled_ = true;
 
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
+/*
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 ZividCamera::on_deactivate(const rclcpp_lifecycle::State& state)
 {
@@ -276,6 +268,7 @@ ZividCamera::on_shutdown(const rclcpp_lifecycle::State& state)
 {
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
+*/
 
 std_msgs::msg::Header ZividCamera::makeHeader()
 {
@@ -367,7 +360,8 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 
 //   if (!enabled_)
 //   {
-//     RCLCPP_WARN(this->get_logger(), "Trying to call the 'capture_assistant/suggest_settings' service, but the service "
+//     RCLCPP_WARN(this->get_logger(), "Trying to call the 'capture_assistant/suggest_settings' service, but the service
+//     "
 //                                     "is not activated");
 //     return;
 //   }
@@ -398,11 +392,14 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 //   settings_ = Zivid::CaptureAssistant::suggestSettings(camera_, suggestSettingsParameters);
 
 //   std::string settings_parameter_prefix{ "zivid.camera.settings" };
-//   parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix + ".processing.color.balance.blue",
+//   parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix +
+//   ".processing.color.balance.blue",
 //                                                           settings_.processing().color().balance().blue().value()));
-//   parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix + ".processing.color.balance.green",
+//   parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix +
+//   ".processing.color.balance.green",
 //                                                           settings_.processing().color().balance().red().value()));
-//   parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix + ".processing.color.balance.red",
+//   parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix +
+//   ".processing.color.balance.red",
 //                                                           settings_.processing().color().balance().red().value()));
 //   parameter_server_node_->set_parameter(rclcpp::Parameter(
 //       settings_parameter_prefix + ".processing.filters.experimental.contrast_distortion.correction.enabled",
@@ -452,7 +449,8 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 //         rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) + ".aperture",
 //                           acquisition.aperture().value()));
 //     parameter_server_node_->set_parameter(
-//         rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) + ".brightness",
+//         rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) +
+//         ".brightness",
 //                           acquisition.brightness().value()));
 //     parameter_server_node_->set_parameter(rclcpp::Parameter(
 //         settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) + ".exposure_time",
@@ -460,9 +458,11 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 //     parameter_server_node_->set_parameter(
 //         rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" + std::to_string(i) + ".gain",
 //                           acquisition.gain().value()));
-//     // parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix + ".acquisitions.acquisition_" +
-//     //                                                             std::to_string(i) + ".patterns.sine.bidirectional",
-//     //                                                         acquisition.patterns().sine().bidirectional().value()));
+//     // parameter_server_node_->set_parameter(rclcpp::Parameter(settings_parameter_prefix +
+//     ".acquisitions.acquisition_" +
+//     //                                                             std::to_string(i) +
+//     ".patterns.sine.bidirectional",
+//     // acquisition.patterns().sine().bidirectional().value()));
 //   }
 // }
 
@@ -519,7 +519,8 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 //   }
 // }
 
-// rcl_interfaces::msg::SetParametersResult ZividCamera::parameterEventHandler(std::vector<rclcpp::Parameter> parameters)
+// rcl_interfaces::msg::SetParametersResult ZividCamera::parameterEventHandler(std::vector<rclcpp::Parameter>
+// parameters)
 // {
 //   std::lock_guard<std::mutex> parameter_lock_guard{ parameter_mutex_ };
 
@@ -533,7 +534,8 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 //     const std::string& changed_parameter_name = changed_parameter.get_name();
 //     if (changed_parameter_name == settings_parameter_prefix + ".processing.color.balance.blue")
 //     {
-//       return setParameter<rclcpp::ParameterType::PARAMETER_DOUBLE, Zivid::Settings::Processing::Color::Balance::Blue>(
+//       return setParameter<rclcpp::ParameterType::PARAMETER_DOUBLE,
+//       Zivid::Settings::Processing::Color::Balance::Blue>(
 //           changed_parameter, settings_);
 //     }
 //     else if (changed_parameter_name == settings_parameter_prefix + ".processing.color.balance.red")
@@ -543,7 +545,8 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 //     }
 //     else if (changed_parameter_name == settings_parameter_prefix + ".processing.color.balance.green")
 //     {
-//       return setParameter<rclcpp::ParameterType::PARAMETER_DOUBLE, Zivid::Settings::Processing::Color::Balance::Green>(
+//       return setParameter<rclcpp::ParameterType::PARAMETER_DOUBLE,
+//       Zivid::Settings::Processing::Color::Balance::Green>(
 //           changed_parameter, settings_);
 //     }
 //     else if (changed_parameter_name == settings_parameter_prefix + ".processing.filters.experimental.contrast_"
@@ -581,7 +584,8 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 //     else if (changed_parameter_name == settings_parameter_prefix + ".processing.filters.noise.removal.enabled")
 //     {
 //       return setParameter<rclcpp::ParameterType::PARAMETER_BOOL,
-//                           Zivid::Settings::Processing::Filters::Noise::Removal::Enabled>(changed_parameter, settings_);
+//                           Zivid::Settings::Processing::Filters::Noise::Removal::Enabled>(changed_parameter,
+//                           settings_);
 //     }
 //     else if (changed_parameter_name == settings_parameter_prefix + ".processing.filters.noise.removal.threshold")
 //     {
@@ -642,7 +646,8 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 //           }
 //           else if (endsWith(changed_parameter_name, "exposure_time"))
 //           {
-//             return setParameter<rclcpp::ParameterType::PARAMETER_INTEGER, Zivid::Settings::Acquisition::ExposureTime>(
+//             return setParameter<rclcpp::ParameterType::PARAMETER_INTEGER,
+//             Zivid::Settings::Acquisition::ExposureTime>(
 //                 changed_parameter, settings_.acquisitions()[frame_num]);
 //           }
 //           else if (endsWith(changed_parameter_name, "gain"))
