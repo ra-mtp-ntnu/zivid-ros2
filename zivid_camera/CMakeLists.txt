@@ -30,7 +30,7 @@ find_package(image_transport REQUIRED)
 find_package(zivid_conversions REQUIRED)
 find_package(zivid_interfaces REQUIRED)
 
-find_package(Zivid 2.0.0 COMPONENTS Core REQUIRED)
+find_package(Zivid 2.5.0 COMPONENTS Core REQUIRED)
 message(STATUS "Found Zivid version ${Zivid_VERSION}")
 
 find_package(OpenMP REQUIRED)
