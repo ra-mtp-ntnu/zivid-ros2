@@ -1,3 +1,6 @@
+# Copyright (c) 2020 Norwegian University of Science and Technology
+# Use of this source code is governed by the BSD 3-Clause license, see LICENSE
+
 from launch import LaunchDescription
 from launch.substitutions import PathJoinSubstitution
 
@@ -17,14 +20,15 @@ def generate_launch_description():
     zivid_camera_standalone = Node(
         package="zivid_camera",
         executable="zivid_camera_standalone",
-        name="zivid_camera",
-        namespace="",
+        name="camera",
+        namespace="zivid",
         output="screen",
         parameters=[
             {"frame_id": "zivid_camera_frame"},
             {"settings_path": settings_path},
             {"settings2d_path": settings2d_path},
             {"file_camera_path": ""},
+            {"update_firmware_automatically": False},
         ],
     )
 

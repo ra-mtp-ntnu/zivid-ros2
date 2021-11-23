@@ -4,7 +4,7 @@
 
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
-#include <zivid_camera/zivid_camera.h>
+#include <zivid_camera/zivid_camera.hpp>
 
 int main(int argc, char* argv[])
 {

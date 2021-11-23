@@ -26,7 +26,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-#find_package(image_transport REQUIRED)
+find_package(image_transport REQUIRED)
 find_package(zivid_conversions REQUIRED)
 find_package(zivid_interfaces REQUIRED)
 
@@ -54,7 +54,7 @@ ament_target_dependencies(zivid_camera_library
                           rclcpp_components
                           std_msgs
                           sensor_msgs
-                          #image_transport
+                          image_transport
                           zivid_conversions
                           zivid_interfaces)
 rclcpp_components_register_node(zivid_camera_library
@@ -71,7 +71,7 @@ ament_target_dependencies(zivid_camera_standalone
                           rclcpp_components
                           std_msgs
                           sensor_msgs
-                          #image_transport
+                          image_transport
                           zivid_interfaces)
 
 # since the package installs libraries without exporting them it needs to make

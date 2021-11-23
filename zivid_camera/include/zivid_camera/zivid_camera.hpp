@@ -19,7 +19,7 @@
 #include <sensor_msgs/distortion_models.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 
-// #include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 
 #include <zivid_interfaces/srv/camera_info_model_name.hpp>
 #include <zivid_interfaces/srv/camera_info_serial_number.hpp>
@@ -58,7 +58,6 @@ public:
   ZIVID_CAMERA_PUBLIC
   explicit ZividCamera(const rclcpp::NodeOptions& options);
 
-
 private:
   void publishFrame(Zivid::Frame&& frame);
 
@@ -66,14 +65,33 @@ private:
 
   CameraStatus camera_status_;
 
+  rclcpp::Service<zivid_interfaces::srv::CameraInfoSerialNumber>::SharedPtr camera_info_serial_number_service_;
+  rclcpp::Service<zivid_interfaces::srv::CameraInfoModelName>::SharedPtr camera_info_model_name_service_;
   rclcpp::Service<zivid_interfaces::srv::Capture>::SharedPtr capture_service_;
+  rclcpp::Service<zivid_interfaces::srv::Capture2D>::SharedPtr capture_2d_service_;
+
+  void
+  cameraInfoModelNameServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
+                                    const std::shared_ptr<zivid_interfaces::srv::CameraInfoModelName::Request> request,
+                                    std::shared_ptr<zivid_interfaces::srv::CameraInfoModelName::Response> response);
+
+  void cameraInfoSerialNumberServiceHandler(
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<zivid_interfaces::srv::CameraInfoSerialNumber::Request> request,
+      std::shared_ptr<zivid_interfaces::srv::CameraInfoSerialNumber::Response> response);
 
   void captureServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
                              const std::shared_ptr<zivid_interfaces::srv::Capture::Request> request,
                              std::shared_ptr<zivid_interfaces::srv::Capture::Response> response);
 
+  void capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
+                               const std::shared_ptr<zivid_interfaces::srv::Capture2D::Request> request,
+                               std::shared_ptr<zivid_interfaces::srv::Capture2D::Response> response);
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_publisher_;
+  image_transport::CameraPublisher color_image_publisher_;
+  image_transport::CameraPublisher depth_image_publisher_;
+  image_transport::CameraPublisher snr_image_publisher_;
 
   Zivid::Application zivid_;
   Zivid::Camera camera_;
