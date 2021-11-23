@@ -21,8 +21,6 @@ setup(
     entry_points={
         'console_scripts': [
             'sample_capture = zivid_samples.sample_capture:main',
-            'sample_capture_2 = zivid_samples.sample_capture_2:main',
-            'sample_capture_3 = zivid_samples.sample_capture_3:main'
         ],
     },
 )
