@@ -9,7 +9,6 @@
 int main(int argc, char* argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::NodeOptions options;
   rclcpp::spin(std::make_shared<zivid_camera::ZividCamera>(rclcpp::NodeOptions()));
   rclcpp::shutdown();
   return 0;
