@@ -13,6 +13,8 @@ rosidl_generate_interfaces(zivid_interfaces
                            "srv/CameraInfoModelName.srv"
                            "srv/CameraInfoSerialNumber.srv"
                            "srv/IsConnected.srv"
+                           "srv/LoadSettingsFromFile.srv"
+                           "srv/LoadSettings2DFromFile.srv"
                            DEPENDENCIES
                            builtin_interfaces)
 

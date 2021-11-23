@@ -27,6 +27,8 @@
 #include <zivid_interfaces/srv/capture2_d.hpp>
 #include <zivid_interfaces/srv/capture_assistant_suggest_settings.hpp>
 #include <zivid_interfaces/srv/is_connected.hpp>
+#include <zivid_interfaces/srv/load_settings_from_file.hpp>
+#include <zivid_interfaces/srv/load_settings2_d_from_file.hpp>
 
 #include <zivid_conversions/zivid_conversions.hpp>
 
@@ -69,6 +71,8 @@ private:
   rclcpp::Service<zivid_interfaces::srv::CameraInfoModelName>::SharedPtr camera_info_model_name_service_;
   rclcpp::Service<zivid_interfaces::srv::Capture>::SharedPtr capture_service_;
   rclcpp::Service<zivid_interfaces::srv::Capture2D>::SharedPtr capture_2d_service_;
+  rclcpp::Service<zivid_interfaces::srv::LoadSettingsFromFile>::SharedPtr load_settings_from_file_service_;
+  rclcpp::Service<zivid_interfaces::srv::LoadSettings2DFromFile>::SharedPtr load_settings_2d_from_file_service_;
 
   void
   cameraInfoModelNameServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
@@ -87,6 +91,16 @@ private:
   void capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
                                const std::shared_ptr<zivid_interfaces::srv::Capture2D::Request> request,
                                std::shared_ptr<zivid_interfaces::srv::Capture2D::Response> response);
+
+  void loadSettingsFromFileServiceHandler(
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<zivid_interfaces::srv::LoadSettingsFromFile::Request> request,
+      std::shared_ptr<zivid_interfaces::srv::LoadSettingsFromFile::Response> response);
+
+  void loadSettings2DFromFileServiceHandler(
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<zivid_interfaces::srv::LoadSettings2DFromFile::Request> request,
+      std::shared_ptr<zivid_interfaces::srv::LoadSettings2DFromFile::Response> response);
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_publisher_;
   image_transport::CameraPublisher color_image_publisher_;
