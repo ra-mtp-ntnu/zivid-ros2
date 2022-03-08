@@ -171,9 +171,6 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("ziv
   load_settings_2d_from_file_service_ = create_service<zivid_interfaces::srv::LoadSettings2DFromFile>(
       "load_settings_2d_from_file", std::bind(&ZividCamera::loadSettings2DFromFileServiceHandler, this, _1, _2, _3));
 
-  auto qos = rclcpp::SystemDefaultsQoS();
-  points_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points", qos);
-
   auto points_xyz_publisher_qos = rclcpp::SystemDefaultsQoS();
   if (use_latched_publisher_for_points_xyz_)
   {
