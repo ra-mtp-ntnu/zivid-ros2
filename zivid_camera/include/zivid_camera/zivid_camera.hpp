@@ -67,6 +67,12 @@ private:
   std_msgs::msg::Header makeHeader();
   void publishPointCloudXYZ(const std_msgs::msg::Header& header, const Zivid::PointCloud& point_cloud);
   void publishPointCloudXYZRGBA(const std_msgs::msg::Header& header, const Zivid::PointCloud& point_cloud);
+  void publishColorImage(const std_msgs::msg::Header& header,
+                         const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
+                         const Zivid::PointCloud& point_cloud);
+  void publishDepthImage(const std_msgs::msg::Header& header,
+                         const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
+                         const Zivid::PointCloud& point_cloud);
 
   CameraStatus camera_status_;
 
@@ -105,8 +111,8 @@ private:
       const std::shared_ptr<zivid_interfaces::srv::LoadSettings2DFromFile::Request> request,
       std::shared_ptr<zivid_interfaces::srv::LoadSettings2DFromFile::Response> response);
 
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_xyz_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_xyzrgba_publisher_;
   image_transport::CameraPublisher color_image_publisher_;
   image_transport::CameraPublisher depth_image_publisher_;
   image_transport::CameraPublisher snr_image_publisher_;

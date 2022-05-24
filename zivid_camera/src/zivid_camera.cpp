@@ -23,6 +23,53 @@ using namespace std::placeholders;
 
 namespace
 {
+
+sensor_msgs::msg::PointField createPointField(std::string name, uint32_t offset, uint8_t datatype, uint32_t count)
+{
+  sensor_msgs::msg::PointField point_field;
+  point_field.name = name;
+  point_field.offset = offset;
+  point_field.datatype = datatype;
+  point_field.count = count;
+  return point_field;
+}
+
+bool big_endian()
+{
+  return false;
+}
+
+template <class T>
+void fillCommonMsgFields(T& msg, const std_msgs::msg::Header& header, std::size_t width, std::size_t height)
+{
+  msg.header = header;
+  msg.height = static_cast<uint32_t>(height);
+  msg.width = static_cast<uint32_t>(width);
+  msg.is_bigendian = big_endian();
+}
+
+sensor_msgs::msg::Image::SharedPtr makeImage(const std_msgs::msg::Header& header, const std::string& encoding,
+                                             std::size_t width, std::size_t height)
+{
+  auto image = std::make_shared<sensor_msgs::msg::Image>();
+  fillCommonMsgFields(*image, header, width, height);
+  image->encoding = encoding;
+  const auto bytes_per_pixel = static_cast<std::size_t>(sensor_msgs::image_encodings::numChannels(encoding) *
+                                                        sensor_msgs::image_encodings::bitDepth(encoding) / 8);
+  image->step = static_cast<uint32_t>(bytes_per_pixel * width);
+  return image;
+}
+
+template <typename ZividDataType>
+sensor_msgs::msg::Image::SharedPtr makePointCloudImage(const Zivid::PointCloud& point_cloud,
+                                                       const std_msgs::msg::Header& header, const std::string& encoding)
+{
+  auto image = makeImage(header, encoding, point_cloud.width(), point_cloud.height());
+  image->data.resize(image->step * image->height);
+  point_cloud.copyData<ZividDataType>(reinterpret_cast<ZividDataType*>(image->data.data()));
+  return image;
+}
+
 std::string toString(zivid_camera::CameraStatus camera_status)
 {
   switch (camera_status)
@@ -45,6 +92,54 @@ static bool endsWith(const std::string& str, const std::string& suffix)
 static bool startsWith(const std::string& str, const std::string& prefix)
 {
   return str.size() >= prefix.size() && 0 == str.compare(0, prefix.size(), prefix);
+}
+
+sensor_msgs::msg::CameraInfo::ConstSharedPtr makeCameraInfo(const std_msgs::msg::Header& header, std::size_t width,
+                                                            std::size_t height,
+                                                            const Zivid::CameraIntrinsics& intrinsics)
+{
+  auto msg = std::make_shared<sensor_msgs::msg::CameraInfo>();
+  msg->header = header;
+  msg->width = static_cast<uint32_t>(width);
+  msg->height = static_cast<uint32_t>(height);
+  msg->distortion_model = sensor_msgs::distortion_models::PLUMB_BOB;
+
+  // k1, k2, t1, t2, k3
+  const auto distortion = intrinsics.distortion();
+  msg->d.resize(5);
+  msg->d[0] = distortion.k1().value();
+  msg->d[1] = distortion.k2().value();
+  msg->d[2] = distortion.p1().value();
+  msg->d[3] = distortion.p2().value();
+  msg->d[4] = distortion.k3().value();
+
+  // Intrinsic camera matrix for the raw (distorted) images.
+  //     [fx  0 cx]
+  // K = [ 0 fy cy]
+  //     [ 0  0  1]
+  const auto camera_matrix = intrinsics.cameraMatrix();
+  msg->k[0] = camera_matrix.fx().value();
+  msg->k[2] = camera_matrix.cx().value();
+  msg->k[4] = camera_matrix.fy().value();
+  msg->k[5] = camera_matrix.cy().value();
+  msg->k[8] = 1;
+
+  // R (identity)
+  msg->r[0] = 1;
+  msg->r[4] = 1;
+  msg->r[8] = 1;
+
+  // Projection/camera matrix
+  //     [fx'  0  cx' Tx]
+  // P = [ 0  fy' cy' Ty]
+  //     [ 0   0   1   0]
+  msg->p[0] = camera_matrix.fx().value();
+  msg->p[2] = camera_matrix.cx().value();
+  msg->p[5] = camera_matrix.fy().value();
+  msg->p[6] = camera_matrix.cy().value();
+  msg->p[10] = 1;
+
+  return msg;
 }
 
 }  // namespace
@@ -178,6 +273,10 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("ziv
   }
   points_xyz_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points/xyz", points_xyz_publisher_qos);
 
+  auto points_xyzrgba_publisher_qos = rclcpp::SystemDefaultsQoS();
+  points_xyzrgba_publisher_ =
+      create_publisher<sensor_msgs::msg::PointCloud2>("points/xyzrgba", points_xyzrgba_publisher_qos);
+
   RCLCPP_INFO_STREAM(this->get_logger(), camera_);
   if (!file_camera_mode_)
   {
@@ -205,21 +304,26 @@ void ZividCamera::publishFrame(Zivid::Frame&& frame)
 {
   const bool publish_points_xyz = shouldPublishPointsXYZ();
 
+  const auto header = makeHeader();
+  auto point_cloud = frame.pointCloud();
+
+  // Transform point cloud from millimeters (Zivid SDK) to meter (ROS).
+  const float scale = 0.001f;
+  const auto transformationMatrix = Zivid::Matrix4x4{ scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, 1 };
+  point_cloud.transform(transformationMatrix);
+
   if (publish_points_xyz)
   {
-    const auto header = makeHeader();
-    auto point_cloud = frame.pointCloud();
-
-    // Transform point cloud from millimeters (Zivid SDK) to meter (ROS).
-    const float scale = 0.001f;
-    const auto transformationMatrix = Zivid::Matrix4x4{ scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, 1 };
-    point_cloud.transform(transformationMatrix);
-
-    if (publish_points_xyz)
-    {
-      publishPointCloudXYZ(header, point_cloud);
-    }
+    publishPointCloudXYZ(header, point_cloud);
   }
+
+  publishPointCloudXYZRGBA(header, point_cloud);
+
+  const auto intrinsics = Zivid::Experimental::Calibration::intrinsics(camera_);
+  const auto camera_info = makeCameraInfo(header, point_cloud.width(), point_cloud.height(), intrinsics);
+
+  publishColorImage(header, camera_info, point_cloud);
+  publishDepthImage(header, camera_info, point_cloud);
 }
 
 bool ZividCamera::shouldPublishPointsXYZ() const
@@ -246,6 +350,40 @@ void ZividCamera::publishPointCloudXYZ(const std_msgs::msg::Header& header, cons
   msg->data.resize(msg->row_step * msg->height);
   point_cloud.copyData<ZividDataType>(reinterpret_cast<ZividDataType*>(msg->data.data()));
   points_xyz_publisher_->publish(std::move(msg));
+}
+
+void ZividCamera::publishPointCloudXYZRGBA(const std_msgs::msg::Header& header, const Zivid::PointCloud& point_cloud)
+{
+  using ZividDataType = Zivid::PointXYZColorRGBA;
+  auto msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
+  zivid_conversions::fillCommonMsgFields(*msg, header, point_cloud.width(), point_cloud.height());
+  msg->fields.reserve(4);
+  msg->fields.push_back(zivid_conversions::createPointField("x", 0, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(zivid_conversions::createPointField("y", 4, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(zivid_conversions::createPointField("z", 8, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(zivid_conversions::createPointField("rgba", 12, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->is_dense = false;
+  msg->point_step = sizeof(ZividDataType);
+  msg->row_step = msg->point_step * msg->width;
+  msg->data.resize(msg->row_step * msg->height);
+  point_cloud.copyData<ZividDataType>(reinterpret_cast<ZividDataType*>(msg->data.data()));
+  points_xyzrgba_publisher_->publish(std::move(msg));
+}
+
+void ZividCamera::publishDepthImage(const std_msgs::msg::Header& header,
+                                    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
+                                    const Zivid::PointCloud& point_cloud)
+{
+  auto image = makePointCloudImage<Zivid::PointZ>(point_cloud, header, sensor_msgs::image_encodings::TYPE_32FC1);
+  depth_image_publisher_.publish(image, camera_info);
+}
+
+void ZividCamera::publishColorImage(const std_msgs::msg::Header& header,
+                                    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
+                                    const Zivid::PointCloud& point_cloud)
+{
+  auto image = makePointCloudImage<Zivid::ColorRGBA>(point_cloud, header, sensor_msgs::image_encodings::RGBA8);
+  color_image_publisher_.publish(image, camera_info);
 }
 
 void ZividCamera::cameraInfoModelNameServiceHandler(
