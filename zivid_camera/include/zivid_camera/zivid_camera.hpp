@@ -16,6 +16,8 @@
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/image.hpp>
+// CameraInfo
+#include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/distortion_models.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 
@@ -33,6 +35,8 @@
 #include <zivid_conversions/zivid_conversions.hpp>
 
 #include <zivid_camera/visibility_control.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/predef.h>
 
 namespace Zivid
 {
@@ -105,12 +109,24 @@ private:
       const std::shared_ptr<zivid_interfaces::srv::LoadSettings2DFromFile::Request> request,
       std::shared_ptr<zivid_interfaces::srv::LoadSettings2DFromFile::Response> response);
 
+  void publishDepthImage(const std_msgs::msg::Header& header, const sensor_msgs::msg::CameraInfo::Ptr& camera_info,
+                         const Zivid::PointCloud& point_cloud);
+
+  void publishColorImage(const std_msgs::msg::Header& header,
+                                      const sensor_msgs::msg::CameraInfo::Ptr& camera_info,
+                                      const Zivid::Image<Zivid::ColorRGBA>& image);
+
+
+void publishColorImage(const std_msgs::msg::Header& header, const sensor_msgs::msg::CameraInfo::Ptr& camera_info,
+                                    const Zivid::PointCloud& point_cloud);
+
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_xyz_publisher_;
   image_transport::CameraPublisher color_image_publisher_;
   image_transport::CameraPublisher depth_image_publisher_;
   image_transport::CameraPublisher snr_image_publisher_;
-
+  sensor_msgs::msg::CameraInfo::Ptr makeCameraInfo(const std_msgs::msg::Header& header, std::size_t width,
+                                                   std::size_t height, const Zivid::CameraIntrinsics& intrinsics);
   bool use_latched_publisher_for_points_xyz_{ false };
 
   Zivid::Application zivid_;

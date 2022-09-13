@@ -17,6 +17,9 @@ def generate_launch_description():
         [FindPackageShare("zivid_camera"), "config", "zivid_camera_settings2d.yml"]
     )
 
+    settingsQos_path = PathJoinSubstitution(
+        [FindPackageShare("zivid_camera"), "config", "qos_settings.yml"]
+    )
     zivid_camera_standalone = Node(
         package="zivid_camera",
         executable="zivid_camera_standalone",
@@ -30,6 +33,8 @@ def generate_launch_description():
             {"file_camera_path": ""},
             {"update_firmware_automatically": False},
             {"use_latched_publisher_for_points_xyz": True},
+            {"use_latched_publisher_for_depth_image": True},
+            {"use_latched_publisher_for_color_image": True},
         ],
     )
 

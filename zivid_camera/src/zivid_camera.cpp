@@ -17,6 +17,7 @@
 
 #include <zivid_camera/zivid_camera.hpp>
 #include <zivid_conversions/zivid_conversions.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -215,11 +216,66 @@ void ZividCamera::publishFrame(Zivid::Frame&& frame)
     const auto transformationMatrix = Zivid::Matrix4x4{ scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, 1 };
     point_cloud.transform(transformationMatrix);
 
+    const auto intrinsics = Zivid::Experimental::Calibration::intrinsics(camera_);
+    const auto camera_info = makeCameraInfo(header, point_cloud.width(), point_cloud.height(), intrinsics);
+    publishDepthImage(header, camera_info, point_cloud);
+    publishColorImage(header, camera_info, point_cloud);
+
     if (publish_points_xyz)
     {
       publishPointCloudXYZ(header, point_cloud);
     }
   }
+}
+
+
+sensor_msgs::msg::Image::Ptr makeImage(const std_msgs::msg::Header& header, const std::string& encoding,
+                                       std::size_t width, std::size_t height)
+{
+  auto image = std::make_shared<sensor_msgs::msg::Image>();
+  zivid_conversions::fillCommonMsgFields(*image, header, width, height);
+  image->encoding = encoding;
+  const auto bytes_per_pixel = static_cast<std::size_t>(sensor_msgs::image_encodings::numChannels(encoding) *
+                                                        sensor_msgs::image_encodings::bitDepth(encoding) / 8);
+  image->step = static_cast<uint32_t>(bytes_per_pixel * width);
+  return image;
+}
+
+template <typename ZividDataType>
+sensor_msgs::msg::Image::Ptr makePointCloudImage(const Zivid::PointCloud& point_cloud,
+                                                 const std_msgs::msg::Header& header, const std::string& encoding)
+{
+  auto image = makeImage(header, encoding, point_cloud.width(), point_cloud.height());
+  image->data.resize(image->step * image->height);
+  point_cloud.copyData<ZividDataType>(reinterpret_cast<ZividDataType*>(image->data.data()));
+  return image;
+}
+
+void ZividCamera::publishColorImage(const std_msgs::msg::Header& header, const sensor_msgs::msg::CameraInfo::Ptr& camera_info,
+                                    const Zivid::PointCloud& point_cloud)
+{
+  // ROS_DEBUG_STREAM("Publishing " << color_image_publisher_.getTopic() << " from point cloud");
+  auto image = makePointCloudImage<Zivid::ColorRGBA>(point_cloud, header, sensor_msgs::image_encodings::RGBA8);
+  color_image_publisher_.publish(image, camera_info);
+}
+
+void ZividCamera::publishColorImage(const std_msgs::msg::Header& header, const sensor_msgs::msg::CameraInfo::Ptr& camera_info,
+                                    const Zivid::Image<Zivid::ColorRGBA>& image)
+{
+  // ROS_DEBUG_STREAM("Publishing " << color_image_publisher_.getTopic() << " from Image");
+  auto msg = makeImage(header, sensor_msgs::image_encodings::RGBA8, image.width(), image.height());
+  const auto uint8_ptr_begin = reinterpret_cast<const uint8_t*>(image.data());
+  const auto uint8_ptr_end = reinterpret_cast<const uint8_t*>(image.data() + image.size());
+  msg->data = std::vector<uint8_t>(uint8_ptr_begin, uint8_ptr_end);
+  color_image_publisher_.publish(msg, camera_info);
+}
+
+void ZividCamera::publishDepthImage(const std_msgs::msg::Header& header,
+                                    const sensor_msgs::msg::CameraInfo::Ptr& camera_info,
+                                    const Zivid::PointCloud& point_cloud)
+{
+  auto image = makePointCloudImage<Zivid::PointZ>(point_cloud, header, sensor_msgs::image_encodings::TYPE_32FC1);
+  depth_image_publisher_.publish(image, camera_info);
 }
 
 bool ZividCamera::shouldPublishPointsXYZ() const
@@ -256,6 +312,54 @@ void ZividCamera::cameraInfoModelNameServiceHandler(
   (void)request_header;
   (void)request;
   response->model_name = camera_.info().modelName().toString();
+}
+
+sensor_msgs::msg::CameraInfo::Ptr ZividCamera::makeCameraInfo(const std_msgs::msg::Header& header, std::size_t width,
+                                                              std::size_t height,
+                                                              const Zivid::CameraIntrinsics& intrinsics)
+{
+  auto msg = std::make_shared<sensor_msgs::msg::CameraInfo>();
+  msg->header = header;
+  msg->width = static_cast<uint32_t>(width);
+  msg->height = static_cast<uint32_t>(height);
+  msg->distortion_model = sensor_msgs::distortion_models::PLUMB_BOB;
+
+  // k1, k2, t1, t2, k3
+  const auto distortion = intrinsics.distortion();
+  msg->d.resize(5);
+  msg->d[0] = distortion.k1().value();
+  msg->d[1] = distortion.k2().value();
+  msg->d[2] = distortion.p1().value();
+  msg->d[3] = distortion.p2().value();
+  msg->d[4] = distortion.k3().value();
+
+  // Intrinsic camera matrix for the raw (distorted) images.
+  //     [fx  0 cx]
+  // K = [ 0 fy cy]
+  //     [ 0  0  1]
+  const auto camera_matrix = intrinsics.cameraMatrix();
+  msg->k[0] = camera_matrix.fx().value();
+  msg->k[2] = camera_matrix.cx().value();
+  msg->k[4] = camera_matrix.fy().value();
+  msg->k[5] = camera_matrix.cy().value();
+  msg->k[8] = 1;
+
+  // R (identity)
+  msg->r[0] = 1;
+  msg->r[4] = 1;
+  msg->r[8] = 1;
+
+  // Projection/camera matrix
+  //     [fx'  0  cx' Tx]
+  // P = [ 0  fy' cy' Ty]
+  //     [ 0   0   1   0]
+  msg->p[0] = camera_matrix.fx().value();
+  msg->p[2] = camera_matrix.cx().value();
+  msg->p[5] = camera_matrix.fy().value();
+  msg->p[6] = camera_matrix.cy().value();
+  msg->p[10] = 1;
+
+  return msg;
 }
 
 void ZividCamera::cameraInfoSerialNumberServiceHandler(
