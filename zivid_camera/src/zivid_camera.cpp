@@ -16,7 +16,7 @@
 #include <Zivid/Experimental/Calibration.h>
 
 #include <zivid_camera/zivid_camera.hpp>
-#include <zivid_conversions/zivid_conversions.hpp>
+// #include <zivid_conversions/zivid_conversions.hpp>
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -58,6 +58,19 @@ sensor_msgs::msg::Image::SharedPtr makeImage(const std_msgs::msg::Header& header
                                                         sensor_msgs::image_encodings::bitDepth(encoding) / 8);
   image->step = static_cast<uint32_t>(bytes_per_pixel * width);
   return image;
+}
+
+sensor_msgs::msg::Image::ConstSharedPtr makeColorImage(const std_msgs::msg::Header& header,
+                                                       const Zivid::Image<Zivid::ColorRGBA>& image)
+{
+  auto msg = std::make_shared<sensor_msgs::msg::Image>();
+  fillCommonMsgFields(*msg, header, image.width(), image.height());
+  msg->encoding = sensor_msgs::image_encodings::RGBA8;
+  constexpr uint32_t bytes_per_pixel = 4U;
+  msg->step = static_cast<uint32_t>(bytes_per_pixel * image.width());
+  const auto uint8_data_ptr = reinterpret_cast<const uint8_t*>(image.data());
+  msg->data = std::vector<uint8_t>(uint8_data_ptr, uint8_data_ptr + image.size() * sizeof(Zivid::ColorRGBA));
+  return msg;
 }
 
 template <typename ZividDataType>
@@ -341,11 +354,11 @@ void ZividCamera::publishPointCloudXYZ(const std_msgs::msg::Header& header, cons
   // copies of the data.
   using ZividDataType = Zivid::PointXYZW;
   auto msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
-  zivid_conversions::fillCommonMsgFields(*msg, header, point_cloud.width(), point_cloud.height());
+  fillCommonMsgFields(*msg, header, point_cloud.width(), point_cloud.height());
   msg->fields.reserve(3);
-  msg->fields.push_back(zivid_conversions::createPointField("x", 0, sensor_msgs::msg::PointField::FLOAT32, 1));
-  msg->fields.push_back(zivid_conversions::createPointField("y", 4, sensor_msgs::msg::PointField::FLOAT32, 1));
-  msg->fields.push_back(zivid_conversions::createPointField("z", 8, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(createPointField("x", 0, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(createPointField("y", 4, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(createPointField("z", 8, sensor_msgs::msg::PointField::FLOAT32, 1));
   msg->is_dense = false;
   msg->point_step = sizeof(ZividDataType);
   msg->row_step = msg->point_step * msg->width;
@@ -358,12 +371,12 @@ void ZividCamera::publishPointCloudXYZRGBA(const std_msgs::msg::Header& header, 
 {
   using ZividDataType = Zivid::PointXYZColorBGRA;
   auto msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
-  zivid_conversions::fillCommonMsgFields(*msg, header, point_cloud.width(), point_cloud.height());
+  fillCommonMsgFields(*msg, header, point_cloud.width(), point_cloud.height());
   msg->fields.reserve(4);
-  msg->fields.push_back(zivid_conversions::createPointField("x", 0, sensor_msgs::msg::PointField::FLOAT32, 1));
-  msg->fields.push_back(zivid_conversions::createPointField("y", 4, sensor_msgs::msg::PointField::FLOAT32, 1));
-  msg->fields.push_back(zivid_conversions::createPointField("z", 8, sensor_msgs::msg::PointField::FLOAT32, 1));
-  msg->fields.push_back(zivid_conversions::createPointField("rgba", 12, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(createPointField("x", 0, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(createPointField("y", 4, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(createPointField("z", 8, sensor_msgs::msg::PointField::FLOAT32, 1));
+  msg->fields.push_back(createPointField("rgba", 12, sensor_msgs::msg::PointField::FLOAT32, 1));
   msg->is_dense = false;
   msg->point_step = sizeof(ZividDataType);
   msg->row_step = msg->point_step * msg->width;
@@ -457,9 +470,9 @@ void ZividCamera::capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t
   auto frame = camera_.capture(settings2d_);
   const auto header = makeHeader();
   auto image = frame.imageRGBA();
-  const auto camera_info = zivid_conversions::makeCameraInfo(header, image.width(), image.height(),
-                                                             Zivid::Experimental::Calibration::intrinsics(camera_));
-  color_image_publisher_.publish(zivid_conversions::makeColorImage(header, image), camera_info);
+  const auto camera_info =
+      makeCameraInfo(header, image.width(), image.height(), Zivid::Experimental::Calibration::intrinsics(camera_));
+  color_image_publisher_.publish(makeColorImage(header, image), camera_info);
 }
 
 void ZividCamera::loadSettingsFromFileServiceHandler(
