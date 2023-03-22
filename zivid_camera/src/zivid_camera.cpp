@@ -266,16 +266,15 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("ziv
   load_settings_2d_from_file_service_ = create_service<zivid_interfaces::srv::LoadSettings2DFromFile>(
       "load_settings_2d_from_file", std::bind(&ZividCamera::loadSettings2DFromFileServiceHandler, this, _1, _2, _3));
 
-  auto points_xyz_publisher_qos = rclcpp::SystemDefaultsQoS();
+  rclcpp::QoS qos_default{rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)};
+
   if (use_latched_publisher_for_points_xyz_)
   {
-    points_xyz_publisher_qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
+    qos_default.durability(rclcpp::DurabilityPolicy::TransientLocal);
   }
-  points_xyz_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points/xyz", points_xyz_publisher_qos);
-
-  auto points_xyzrgba_publisher_qos = rclcpp::SystemDefaultsQoS();
+  points_xyz_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("points/xyz", qos_default);
   points_xyzrgba_publisher_ =
-      create_publisher<sensor_msgs::msg::PointCloud2>("points/xyzrgba", points_xyzrgba_publisher_qos);
+      create_publisher<sensor_msgs::msg::PointCloud2>("points/xyzrgba", qos_default);
 
   RCLCPP_INFO_STREAM(this->get_logger(), camera_);
   if (!file_camera_mode_)
