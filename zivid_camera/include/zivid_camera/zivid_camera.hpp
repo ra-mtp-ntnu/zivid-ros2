@@ -67,6 +67,12 @@ private:
   void publishDepthImage(const std_msgs::msg::Header& header,
                          const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
                          const Zivid::PointCloud& point_cloud);
+  void publishSnrImage(const std_msgs::msg::Header& header,
+                       const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
+                       const Zivid::PointCloud& point_cloud);
+  void publishNormalsXYZ(const std_msgs::msg::Header& header,
+                         const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
+                         const Zivid::PointCloud& point_cloud);
 
   CameraStatus camera_status_;
 
@@ -110,6 +116,7 @@ private:
   image_transport::CameraPublisher color_image_publisher_;
   image_transport::CameraPublisher depth_image_publisher_;
   image_transport::CameraPublisher snr_image_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr normals_xyz_publisher_;
 
   bool use_latched_publisher_for_points_xyz_{ false };
 
