@@ -354,7 +354,7 @@ void ZividCamera::publishPointCloudXYZ(const std_msgs::msg::Header& header, cons
 
 void ZividCamera::publishPointCloudXYZRGBA(const std_msgs::msg::Header& header, const Zivid::PointCloud& point_cloud)
 {
-  using ZividDataType = Zivid::PointXYZColorRGBA;
+  using ZividDataType = Zivid::PointXYZColorBGRA;
   auto msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
   zivid_conversions::fillCommonMsgFields(*msg, header, point_cloud.width(), point_cloud.height());
   msg->fields.reserve(4);

@@ -48,12 +48,6 @@ enum class CameraStatus
   Disconnected
 };
 
-struct ZividCameraOptions
-{
-  std::string node_name = "zivid_camera";
-  rclcpp::QoS qos_profile = rclcpp::SystemDefaultsQoS();
-};
-
 class ZividCamera : public rclcpp::Node
 {
 public:
