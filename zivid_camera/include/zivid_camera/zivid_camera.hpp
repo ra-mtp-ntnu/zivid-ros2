@@ -21,10 +21,9 @@
 
 #include <image_transport/image_transport.hpp>
 
+#include <std_srvs/srv/empty.hpp>
 #include <zivid_interfaces/srv/camera_info_model_name.hpp>
 #include <zivid_interfaces/srv/camera_info_serial_number.hpp>
-#include <zivid_interfaces/srv/capture.hpp>
-#include <zivid_interfaces/srv/capture2_d.hpp>
 #include <zivid_interfaces/srv/capture_assistant_suggest_settings.hpp>
 #include <zivid_interfaces/srv/is_connected.hpp>
 #include <zivid_interfaces/srv/load_settings_from_file.hpp>
@@ -72,8 +71,8 @@ private:
 
   rclcpp::Service<zivid_interfaces::srv::CameraInfoSerialNumber>::SharedPtr camera_info_serial_number_service_;
   rclcpp::Service<zivid_interfaces::srv::CameraInfoModelName>::SharedPtr camera_info_model_name_service_;
-  rclcpp::Service<zivid_interfaces::srv::Capture>::SharedPtr capture_service_;
-  rclcpp::Service<zivid_interfaces::srv::Capture2D>::SharedPtr capture_2d_service_;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr capture_service_;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr capture_2d_service_;
   rclcpp::Service<zivid_interfaces::srv::LoadSettingsFromFile>::SharedPtr load_settings_from_file_service_;
   rclcpp::Service<zivid_interfaces::srv::LoadSettings2DFromFile>::SharedPtr load_settings_2d_from_file_service_;
 
@@ -88,12 +87,12 @@ private:
       std::shared_ptr<zivid_interfaces::srv::CameraInfoSerialNumber::Response> response);
 
   void captureServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
-                             const std::shared_ptr<zivid_interfaces::srv::Capture::Request> request,
-                             std::shared_ptr<zivid_interfaces::srv::Capture::Response> response);
+                             const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+                             std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
   void capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
-                               const std::shared_ptr<zivid_interfaces::srv::Capture2D::Request> request,
-                               std::shared_ptr<zivid_interfaces::srv::Capture2D::Response> response);
+                               const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+                               std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
   void loadSettingsFromFileServiceHandler(
       const std::shared_ptr<rmw_request_id_t> request_header,

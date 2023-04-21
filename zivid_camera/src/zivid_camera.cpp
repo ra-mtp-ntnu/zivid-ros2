@@ -254,10 +254,10 @@ ZividCamera::ZividCamera(const rclcpp::NodeOptions& options) : rclcpp::Node("ziv
   camera_info_model_name_service_ = this->create_service<zivid_interfaces::srv::CameraInfoModelName>(
       "camera_info/model_name", std::bind(&ZividCamera::cameraInfoModelNameServiceHandler, this, _1, _2, _3));
 
-  capture_service_ = create_service<zivid_interfaces::srv::Capture>(
+  capture_service_ = create_service<std_srvs::srv::Empty>(
       "capture", std::bind(&ZividCamera::captureServiceHandler, this, _1, _2, _3));
 
-  capture_2d_service_ = create_service<zivid_interfaces::srv::Capture2D>(
+  capture_2d_service_ = create_service<std_srvs::srv::Empty>(
       "capture_2d", std::bind(&ZividCamera::capture2DServiceHandler, this, _1, _2, _3));
 
   load_settings_from_file_service_ = create_service<zivid_interfaces::srv::LoadSettingsFromFile>(
@@ -406,8 +406,8 @@ void ZividCamera::cameraInfoSerialNumberServiceHandler(
 }
 
 void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
-                                        const std::shared_ptr<zivid_interfaces::srv::Capture::Request> request,
-                                        std::shared_ptr<zivid_interfaces::srv::Capture::Response> response)
+                                        const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+                                        std::shared_ptr<std_srvs::srv::Empty::Response> response)
 {
   (void)request_header;
   (void)request;
@@ -417,8 +417,8 @@ void ZividCamera::captureServiceHandler(const std::shared_ptr<rmw_request_id_t> 
 }
 
 void ZividCamera::capture2DServiceHandler(const std::shared_ptr<rmw_request_id_t> request_header,
-                                          const std::shared_ptr<zivid_interfaces::srv::Capture2D::Request> request,
-                                          std::shared_ptr<zivid_interfaces::srv::Capture2D::Response> response)
+                                          const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+                                          std::shared_ptr<std_srvs::srv::Empty::Response> response)
 {
   (void)request_header;
   (void)request;

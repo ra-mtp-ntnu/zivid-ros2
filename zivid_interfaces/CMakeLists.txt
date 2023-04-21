@@ -7,8 +7,6 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(zivid_interfaces
-                           "srv/Capture.srv"
-                           "srv/Capture2D.srv"
                            "srv/CaptureAssistantSuggestSettings.srv"
                            "srv/CameraInfoModelName.srv"
                            "srv/CameraInfoSerialNumber.srv"
