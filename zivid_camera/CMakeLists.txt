@@ -26,6 +26,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(zivid_conversions REQUIRED)
 find_package(zivid_interfaces REQUIRED)
@@ -53,6 +54,7 @@ target_link_libraries(zivid_camera_library Zivid::Core)
 ament_target_dependencies(zivid_camera_library
                           rclcpp_components
                           std_msgs
+                          std_srvs
                           sensor_msgs
                           image_transport
                           zivid_conversions
