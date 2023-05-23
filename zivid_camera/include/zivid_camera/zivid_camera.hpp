@@ -29,7 +29,7 @@
 #include <zivid_interfaces/srv/load_settings_from_file.hpp>
 #include <zivid_interfaces/srv/load_settings2_d_from_file.hpp>
 
-#include <zivid_conversions/zivid_conversions.hpp>
+// #include <zivid_conversions/zivid_conversions.hpp>
 
 #include <zivid_camera/visibility_control.h>
 
@@ -64,6 +64,12 @@ private:
                          const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
                          const Zivid::PointCloud& point_cloud);
   void publishDepthImage(const std_msgs::msg::Header& header,
+                         const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
+                         const Zivid::PointCloud& point_cloud);
+  void publishSnrImage(const std_msgs::msg::Header& header,
+                       const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
+                       const Zivid::PointCloud& point_cloud);
+  void publishNormalsXYZ(const std_msgs::msg::Header& header,
                          const sensor_msgs::msg::CameraInfo::ConstSharedPtr& camera_info,
                          const Zivid::PointCloud& point_cloud);
 
@@ -109,6 +115,7 @@ private:
   image_transport::CameraPublisher color_image_publisher_;
   image_transport::CameraPublisher depth_image_publisher_;
   image_transport::CameraPublisher snr_image_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr normals_xyz_publisher_;
 
   bool use_latched_publisher_for_points_xyz_{ false };
 
